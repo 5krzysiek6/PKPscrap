@@ -4,7 +4,7 @@ import os
 import matplotlib.pyplot as plt 
 
 # Ścieżka do folderu, w którym znajdują się pliki do wczytania
-folder_path = '/Users/krzysztofkapusta/Downloads/pociagi'
+folder_path = ''
 
 # Lista, w której będziemy przechowywać ramki danych dla poszczególnych plików
 dataframes = []
