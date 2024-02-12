@@ -1,0 +1,46 @@
+!pip install scrapy
+from scrapy import Selector
+import requests
+import pandas as pd
+import time
+import pytz
+from datetime import datetime
+%cd "/content/drive/MyDrive/pociagi"
+url = 'https://www.pkpcargo.com'
+html = requests.get( url ).content
+sel = Selector( text = html )
+pociagi = sel.xpath('//div[@class="value"]/span[@class="animated-value"]/text()').get()
+print(f'Liczba pociągów na torach: {pociagi}')
+df = pd.DataFrame(columns=['Data', 'Liczba pociągów na torach:'])
+def pobierz_dane():
+    global df
+
+    url = 'https://www.pkpcargo.com'
+    html = requests.get(url).content
+    sel = Selector(text=html)
+
+    # Wybieramy element h2 za pomocą XPath
+    h2_text = sel.xpath('//div[@class="value"]/span[@class="animated-value"]/text()').get()
+
+    # Dodajemy nowy wiersz do DataFrame
+    now_utc = datetime.now(pytz.utc)
+    now_gmt1 = now_utc.astimezone(pytz.timezone('Europe/Warsaw'))
+
+    new_row = pd.DataFrame({'Data': [now_gmt1.strftime('%Y-%m-%d %H:%M:%S')], 'Liczba pociągów na torach:': [h2_text]})
+    df = pd.concat([df, new_row], ignore_index=True)
+    print(f'Dodano dane do DataFrame: {now_gmt1} - {h2_text}')
+
+    file_name = f'dane_pociagow_{now_gmt1.strftime("%Y-%m-%d_%H-%M-%S")}.csv'
+    df.to_csv(file_name, index=False)
+    print(f'Zapisano dane do pliku CSV: {file_name}')
+
+# Uruchom pętlę nieskończoną
+while True:
+    # Poczekaj do pełnej godziny
+    now_utc = datetime.now(pytz.utc)
+    now_gmt1 = now_utc.astimezone(pytz.timezone('Europe/Warsaw'))
+    wait_time = 3600 - (now_gmt1.minute * 60 + now_gmt1.second)
+    time.sleep(wait_time)
+
+    # Wywołaj funkcję do pobierania danych
+    pobierz_dane()
