@@ -1,0 +1,109 @@
+import numpy as np
+import pandas as pd 
+import os
+import matplotlib.pyplot as plt 
+
+# Ścieżka do folderu, w którym znajdują się pliki do wczytania
+folder_path = '/Users/krzysztofkapusta/Downloads/pociagi'
+
+# Lista, w której będziemy przechowywać ramki danych dla poszczególnych plików
+dataframes = []
+
+# Iteracja po plikach w danym folderze
+for filename in os.listdir(folder_path):
+    if filename.endswith('.csv'):  # Przykład: wczytywanie tylko plików CSV
+        file_path = os.path.join(folder_path, filename)
+        
+        # Wczytanie pliku do ramki danych
+        df = pd.read_csv(file_path)
+        
+        # Dodanie ramki danych do listy
+        dataframes.append(df)
+
+# Połączenie wszystkich ramek danych w jedną
+combined_df = pd.concat(dataframes, ignore_index=True)
+
+# Wyświetlenie wyniku
+print(combined_df)
+
+print(combined_df.isna().sum())
+df = combined_df.dropna()
+print(df.isna().sum())
+
+df['Data'] = pd.to_datetime(df['Data'])
+
+df.set_index('Data', inplace=True)
+
+daily_average_df = df.resample('D').mean()
+daily_average_df = daily_average_df.dropna()
+#print(daily_average_df)
+
+df.plot(kind='line')
+plt.xlabel('Data')
+plt.ylabel('Liczba pociągów na torach')
+plt.title('Liczba pociągów na torach ')
+
+daily_average_df.plot(kind='line')
+plt.xlabel('Data')
+plt.ylabel('Średnia dzienna liczba pociągów na torach')
+plt.title('Średnia dzienna liczba pociągów na torach')
+
+daily_average_df['Day_of_Week'] = daily_average_df.index.weekday
+
+# Grupowanie danych według dnia tygodnia i obliczanie średniej dla każdego dnia tygodnia
+weekly_average_df = daily_average_df.groupby('Day_of_Week').mean()
+
+# Zmiana numerów dni tygodnia na nazwy
+weekday_names = ['Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota', 'Niedziela']
+weekly_average_df.index = weekday_names
+
+print(weekly_average_df)
+
+# Rysowanie wykresu słupkowego
+weekly_average_df.plot(kind='bar', legend=False, color='skyblue', alpha=0.7)
+
+# Ustawienia etykiet i tytułu
+plt.xlabel('Dzień Tygodnia')
+plt.ylabel('Średnia liczba pociągów')
+plt.title('Średnia liczba pociągów w dany dzień')
+plt.ylim(350, 420)
+
+# Wyświetlanie wykresu
+plt.show()
+
+# Wyznacz średnią dla pociągów w nocy (22:00 - 6:00)
+srednia_noc = df.between_time('22:00', '06:00')['Liczba pociągów na torach:'].mean()
+
+# Wyznacz średnią dla pociągów w ciągu dnia
+srednia_dzien = df.between_time('06:00', '22:00')['Liczba pociągów na torach:'].mean()
+
+# Wydrukuj wyniki
+print("Średnia pociągów w nocy:", srednia_noc)
+print("Średnia pociągów w ciągu dnia:", srednia_dzien)
+
+# Stwórz wykres
+plt.bar(['Średnia w nocy', 'Średnia w ciągu dnia'], [srednia_noc, srednia_dzien])
+plt.xlabel('Okres')
+plt.ylabel('Średnia liczba pociągów')
+plt.title('Średnia liczba pociągów w nocy i w ciągu dnia')
+plt.ylim(370, 380)
+plt.show()
+
+# Obliczenie średniej liczby pociągów dla każdej godziny
+average_trains_per_hour = df.groupby(df.index.hour).mean()
+
+print(average_trains_per_hour)
+
+# Tworzenie wykresu
+plt.figure(figsize=(10, 6))
+plt.plot(average_trains_per_hour.index, average_trains_per_hour['Liczba pociągów na torach:'], marker='o', linestyle='-')
+
+# Konfiguracja wykresu
+plt.title('Średnia liczba pociągów na torach w ciągu dnia')
+plt.xlabel('Godzina')
+plt.ylabel('Średnia liczba pociągów')
+plt.xticks(range(24))  # Ustawienie etykiet osi x na godziny
+plt.grid(True)
+
+# Wyświetlenie wykresu
+plt.show()
